@@ -72,17 +72,15 @@ features = ['inning', 'over', 'total_runs', 'player_dismissed', 'wickets', 'scor
 # features = ['inning', 'over', 'total_runs', 'player_dismissed', 'wickets', 'score', 'rem_target','rr', 'rr_diff', 'inning_win' ]
 
 
-df_val = df_features.ix[df_features.match_id == 557 ,:]
+df_val = df_features.ix[df_features.match_id == 577 ,:]
 # df_val = df_val.ix[df_val.inning==1, :]
 # df_val = df_val.ix[ df_val.over==1 , :]
-df_train = df_features.ix[df_features.match_id != 557,:]
+df_train = df_features.ix[df_features.match_id != 577,:]
 
 # plt.figure(figsize=(11,11))
 # colormap = plt.cm.viridis_r
 # sns.heatmap(df_train[features[:]].corr(), vmax=1.0, cmap=colormap, annot=True)
 # plt.show()
-print(df_val)
-print(df_train.tail())
 
 train_X = np.array(df_train[features[:]])
 train_y = np.array(df_train['team1_wins'])

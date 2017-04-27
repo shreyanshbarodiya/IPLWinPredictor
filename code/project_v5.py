@@ -13,8 +13,12 @@ df_season = pd.read_csv("../input_2/updated/Season.csv")
 df_team = pd.read_csv("../input_2/updated/Team.csv")
 
 ###############################################################################################################
+#TEAM - SEASON
+###############################################################################################################
+
+###############################################################################################################
 #AVERAGE
-#######
+
 ####
 df_temp = df_match[['Season_Id', 'Batting_first_team', 'Batting_second_team', 'Inning_1_Score', 'Inning_2_Score']]
 df_temp1 = df_temp
@@ -91,9 +95,35 @@ df_average_season = pd.merge(df_average1_season, df_average2_season)
 
 
 
-###############################################################################################################
 #DF_TEAM_SEASON contains ['Season_Id', 'Team_Id', 'Inning_1_average', 'Inning_2_average','Total_matches_1', 'Total_matches_2', 'Matches_won_1', 'Matches_won_2','Win_percent_1', 'Win_percent_2']
 df_team_season = pd.merge(df_average_season, df_season_win_percent)
+###############################################################################################################
 
 
+###############################################################################################################
+#CITY - SEASON
+###############################################################################################################
+df_city_season_average = df_match[['Season_Id', 'City_Name', 'Inning_1_Score','Inning_2_Score']]
+df_city_season_average = df_city_season_average.groupby(['Season_Id', 'City_Name'])['Inning_1_Score','Inning_2_Score'].mean().reset_index()
 
+df_temp = df_match[['Season_Id', 'City_Name', 'Match_Id']]
+df_temp = df_temp.groupby(['Season_Id', 'City_Name'])['Match_Id'].count().reset_index()
+df_temp['Total_Matches'] = df_temp['Match_Id']
+del df_temp['Match_Id']
+df_temp1 = df_temp
+
+df_temp = df_match[['Season_Id', 'City_Name', 'Match_Id', 'Match_Winner_Id', 'Batting_first_team']]
+df_temp = df_temp.ix[df_temp.Batting_first_team == df_temp.Match_Winner_Id]
+df_temp = df_temp.groupby(['Season_Id', 'City_Name'])['Match_Id'].count().reset_index()
+df_temp['Matches_won_batting_1'] = df_temp['Match_Id']
+del df_temp['Match_Id']
+df_temp2 = df_temp
+
+df_city_season_win_percent = pd.merge(df_temp1, df_temp2)
+df_city_season_win_percent['Win_percent_1'] = df_city_season_win_percent['Matches_won_batting_1']/df_city_season_win_percent['Total_Matches']
+del df_city_season_win_percent['Total_Matches']
+del df_city_season_win_percent['Matches_won_batting_1']
+
+#DF_GROUND_SEASON contains ['Season_Id', 'City_Name', 'Inning_1_Score', 'Inning_2_Score', 'Win_percent_1']
+df_ground_season = pd.merge(df_city_season_average, df_city_season_win_percent)
+###############################################################################################################

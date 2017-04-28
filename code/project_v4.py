@@ -48,12 +48,12 @@ def get_form_home_team(row):
 	return form
 
 
-df_del = pd.read_csv("../input_2/Ball_by_Ball.csv")
-df_match = pd.read_csv("../input_2/Match.csv")
-df_player = pd.read_csv("../input_2/Player.csv")
-df_player_match = pd.read_csv("../input_2/Player_Match.csv")
-df_season = pd.read_csv("../input_2/Season.csv")
-df_team = pd.read_csv("../input_2/Team.csv")
+df_del = pd.read_csv("../input_2/updated/Ball_by_Ball.csv")
+df_match = pd.read_csv("../input_2/updated/Match_Updated.csv")
+df_player = pd.read_csv("../input_2/updated/Player.csv")
+df_player_match = pd.read_csv("../input_2/updated/Player_Match.csv")
+df_season = pd.read_csv("../input_2/updated/Season.csv")
+df_team = pd.read_csv("../input_2/updated/Team.csv")
 
 df_match = df_match[(df_match.Is_DuckWorthLewis == 0) & (df_match.IS_Result == 1)]
 
@@ -79,6 +79,7 @@ df_match['Venue_Id'] = df_match['Venue_Name'].astype('category').cat.codes
 # score = cross_val_score(logreg, data, target, cv=5)
 # print(df_match.tail(20))
 
+#########################################################################
 df_del['Player_dissimal_Id'] = pd.to_numeric(df_del['Player_dissimal_Id'], errors='coerce', downcast='unsigned')
 df_del['Batsman_Scored'] = pd.to_numeric(df_del['Batsman_Scored'], errors='coerce', downcast='unsigned')
 
@@ -108,7 +109,7 @@ bm = bm.merge(bo, how='left', left_on=['Match_Id', 'Striker_Id'], right_on=['Mat
 bm = bm.drop(['Player_dissimal_Id'], axis=1)
 bm.fillna(0, inplace=True)
 
-##########
+#########################################################################
 
 rc = df_del[(df_del['Extra_Type'] != "legbyes") & (df_del['Extra_Type'] != "byes")].groupby(['Match_Id', 'Bowler_Id'])['Total_runs_ball'].sum().reset_index()
 rc['Runs Conceded'] = rc['Total_runs_ball']
@@ -124,22 +125,39 @@ wt = wt.drop(['Ball_Id'], axis=1)
 
 bow = pd.merge(rc, bt)
 bow = bow.merge(wt, how='left', on=['Match_Id', 'Bowler_Id'])
+bow['Player_Id'] = bow['Bowler_Id']
+bow = bow.drop(['Bowler_Id'], axis=1)
 bow.fillna(0, inplace=True)
 
-bm['cum_run_scored'] = bm.groupby(['Striker_Id'])['Batsman_Scored'].cumsum() - bm['Batsman_Scored']
-bm['cum_ball_faced'] = bm.groupby(['Striker_Id'])['Balls_Faced'].cumsum() - bm['Balls_Faced']
-bm['cum_four'] = bm.groupby(['Striker_Id'])['Fours'].cumsum() - bm['Fours']
-bm['cum_six'] = bm.groupby(['Striker_Id'])['Sixes'].cumsum() - bm['Sixes']
-bm['cum_dis'] = bm.groupby(['Striker_Id'])['Dismissed'].cumsum() - bm['Dismissed']
 bm['Player_Id'] = bm['Striker_Id']
-bm = bm.drop(['Batsman_Scored', 'Balls_Faced', 'Fours', 'Sixes', 'Dismissed', 'Striker_Id'], axis=1)
+bm = bm.drop(['Striker_Id'], axis=1)
+bm = df_player_match[['Match_Id', 'Player_Id']].merge(bm, how='left', on=['Match_Id', 'Player_Id'])
+bm.fillna(0, inplace=True)
 
+player = bm.merge(bow, how='left', on=['Player_Id', 'Match_Id'])
+player.fillna(0, inplace=True)
 
-bow['cum_run_conceded'] = bow.groupby(['Bowler_Id'])['Runs Conceded'].cumsum() - bow['Runs Conceded']
-bow['cum_ball_thrown'] = bow.groupby(['Bowler_Id'])['Balls Thrown'].cumsum() - bow['Balls Thrown']
-bow['cum_wicket'] = bow.groupby(['Bowler_Id'])['Wickets Taken'].cumsum() - bow['Wickets Taken']
-bow['Player_Id'] = bow['Bowler_Id']
-bow = bow.drop(['Runs Conceded', 'Balls Thrown', 'Wickets Taken', 'Bowler_Id'], axis=1)
+player['cum_run_scored'] = player.groupby(['Player_Id'])['Batsman_Scored'].cumsum() - player['Batsman_Scored']
+player['cum_ball_faced'] = player.groupby(['Player_Id'])['Balls_Faced'].cumsum() - player['Balls_Faced']
+player['cum_four'] = player.groupby(['Player_Id'])['Fours'].cumsum() - player['Fours']
+player['cum_six'] = player.groupby(['Player_Id'])['Sixes'].cumsum() - player['Sixes']
+player['cum_dis'] = player.groupby(['Player_Id'])['Dismissed'].cumsum() - player['Dismissed']
 
-player = pd.merge(bm, bow)
-print(player.sort_values(['Match_Id', 'Player_Id']).head(100))
+player['cum_run_conceded'] = player.groupby(['Player_Id'])['Runs Conceded'].cumsum() - player['Runs Conceded']
+player['cum_ball_thrown'] = player.groupby(['Player_Id'])['Balls Thrown'].cumsum() - player['Balls Thrown']
+player['cum_wicket'] = player.groupby(['Player_Id'])['Wickets Taken'].cumsum() - player['Wickets Taken']
+
+player = player.drop(['Batsman_Scored', 'Balls_Faced', 'Fours', 'Sixes', 'Dismissed', 'Runs Conceded', 'Balls Thrown', 'Wickets Taken'], axis=1)
+# bow.sort_values(['Player_Id', 'Match_Id']).to_csv('bow.csv')
+
+player['Batting_Average'] = player.apply(lambda row: (row['cum_run_scored'] / row['cum_dis']) if row['cum_dis'] > 0 else row['cum_run_scored'], axis=1) 
+player['Batting_Strike_Rate'] = (player['cum_run_scored'] / player['cum_ball_faced'])*100
+player['Hard_Hitter'] = (player['cum_four']*4 + player['cum_six']*6)/player['cum_ball_faced']
+
+player['Economy_Rate'] = player.apply(lambda row : (row['cum_run_conceded']*6/row['cum_ball_thrown']) if row['cum_ball_thrown'] > 0 else 9, axis=1)
+player['Bowling_Strike_Rate'] = player.apply(lambda row: (row['cum_ball_thrown']/row['cum_wicket']) if row['cum_wicket'] > 0 else max(24, row['cum_ball_thrown']), axis=1)
+player['Bowling_Average'] = player.apply(lambda row: (row['cum_run_conceded']/row['cum_wicket']) if row['cum_wicket'] > 0 else max(row['Economy_Rate']*4, row['cum_run_conceded']), axis=1)
+
+player.fillna(0, inplace=True)
+player.sort_values(['Player_Id', 'Match_Id']).to_csv('XXX.csv')
+# player.sort_values(['Player_Id', 'Match_Id']).to_csv('XXX.csv')

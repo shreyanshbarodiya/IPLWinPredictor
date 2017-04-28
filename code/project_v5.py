@@ -127,3 +127,12 @@ del df_city_season_win_percent['Matches_won_batting_1']
 #DF_GROUND_SEASON contains ['Season_Id', 'City_Name', 'Inning_1_Score', 'Inning_2_Score', 'Win_percent_1']
 df_ground_season = pd.merge(df_city_season_average, df_city_season_win_percent)
 ###############################################################################################################
+
+df_team_season = df_team_season[['Season_Id', 'Team_Id', 'Win_percent_1', 'Win_percent_2']]
+df_ground_season = df_ground_season[['Season_Id', 'City_Name', 'Win_percent_1']]
+
+# df_ground_season['cum_win_1'] = df_ground_season.groupby('City_Name')['Win_percent_1'].cumsum()
+# df_ground_season['cum_win_1'] = df_ground_season.apply() df_ground_season['cum_win_1'] / (df_ground_season.groupby('City_Name')['Win_percent_1'].cumcount())
+
+# print(df_team_season)
+# print(df_ground_season.sort_values(['City_Name', 'Season_Id']))

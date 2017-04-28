@@ -17,8 +17,10 @@ from sklearn.metrics import classification_report, accuracy_score
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-from sklearn.ensemble import AdaBoostClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.ensemble import AdaBoostClassifier, ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 
 
 NUM_MATCH_HISTORY = 5
@@ -393,19 +395,46 @@ X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.33
 #     print(accuracy_score(y_test, y_pred))
 # print(k_range[scores.index(max(scores))], max(scores))
 
+# scores = []
+# C_range = [10**i for i in range(10)]
+# for i in range(len(C_range)):
+# 	svc = SVC(C=C_range[i], kernel='poly', random_state=0)
+# 	svc.fit(X_train, y_train)
+# 	y_pred = svc.predict(X_test)
+# 	scores.append(accuracy_score(y_test, y_pred))
+# 	print("C value:", 10**i)
+# 	print(accuracy_score(y_test, y_pred))
+# print(C_range[scores.index(max(scores))], max(scores))
+
+# scores = []
+# dep = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+# for i in range(len(dep)):
+# 	clf = DecisionTreeClassifier(max_depth=dep[i], random_state=0)
+# 	clf.fit(X_train, y_train)
+# 	y_pred = clf.predict(X_test)
+# 	scores.append(accuracy_score(y_test, y_pred))
+# 	print("dep value:", dep[i])
+# 	print(accuracy_score(y_test, y_pred))
+# print(dep[scores.index(max(scores))], max(scores))
+
+
+# scores = []
+# dep = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+# for i in range(len(dep)):
+# 	clf = RandomForestClassifier(max_depth=10, n_estimators=dep[i], max_features=3,random_state=0)
+# 	clf.fit(X_train, y_train)
+# 	y_pred = clf.predict(X_test)
+# 	scores.append(accuracy_score(y_test, y_pred))
+# 	print("dep value:", dep[i])
+# 	print(accuracy_score(y_test, y_pred))
+# print(dep[scores.index(max(scores))], max(scores))
+
 scores = []
-C_range = [10**i for i in range(10)]
-for i in range(len(C_range)):
-	svc = SVC(C=C_range[i], kernel='poly', random_state=0)
-	svc.fit(X_train, y_train)
-	y_pred = svc.predict(X_test)
+dep = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12,20, 30, 40, 50, 60, 100]
+for i in range(len(dep)):
+	clf = AdaBoostClassifier(n_estimators=dep[i], random_state= 3, base_estimator=RandomForestClassifier())
+	clf.fit(X_train, y_train)
+	y_pred = clf.predict(X_test)
 	scores.append(accuracy_score(y_test, y_pred))
-	print("C value:", 10**i)
 	print(accuracy_score(y_test, y_pred))
-print(C_range[scores.index(max(scores))], max(scores))
-
-
-
-# for i in range(11):
-
-# [['Match_Id', 'Player_Id', 'Team_Id']]
+print(dep[scores.index(max(scores))], max(scores))

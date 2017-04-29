@@ -1,6 +1,5 @@
 from collections import defaultdict
 from collections import deque
-import csv
 
 import pandas as pd
 import numpy as np
@@ -296,135 +295,161 @@ num_rows = df_match.shape[0]
 
 new_df = pd.read_csv('Training_1.csv')
 
+#
+#TESTING ON SEASON 9 
+test_df = new_df.ix[new_df.Season_Id==9]
+train_df = new_df.ix[new_df.Season_Id!=9]
 
-def test_on_season(season_no):
-	print('season '+ str(season_no))
-	#
-	#TESTING ON SEASON 
-	test_df = new_df.ix[new_df.Season_Id==season_no]
-	train_df = new_df.ix[new_df.Season_Id!=season_no]
+y_train = train_df['target'].astype('int')
+X_train = train_df.drop(['Match_Id','Season_Id', 'City_Name', 'Batting_first_team', 'Batting_second_team', 'target'],axis=1)
 
-	y_train = train_df['target'].astype('int')
-	X_train = train_df.drop(['Match_Id','Season_Id', 'City_Name', 'Batting_first_team', 'Batting_second_team', 'target'],axis=1)
+y_test = test_df['target'].astype('int')
+X_test = test_df.drop(['Match_Id','Season_Id', 'City_Name', 'Batting_first_team', 'Batting_second_team', 'target'],axis=1)
 
-	y_test = test_df['target'].astype('int')
-	X_test = test_df.drop(['Match_Id','Season_Id', 'City_Name', 'Batting_first_team', 'Batting_second_team', 'target'],axis=1)
-
-	X_train = np.array(X_train)
-	X_test = np.array(X_test)
-	y_train = np.array(y_train)
-	y_test = np.array(y_test)
-
-	classifiers = ['MLP','KNN', 'SVC', 'Decision Trees','RandomForest', 'Adaboost_RF']
-	classifiers_result = []
-	# X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.33, random_state=3)
-
-	scores=[]
-	h_range = [1, 2, 3, 4, 5, 6, 7, 8]
-	for h in h_range:
-		mlp = MLPClassifier(hidden_layer_sizes=(139*h, 2), max_iter=10000, random_state=3)
-		mlp.fit(X_train, y_train)
-		y_pred = mlp.predict(X_test)
-		scores.append(accuracy_score(y_test, y_pred))
-
-	print(h_range[scores.index(max(scores))], max(scores))
-	classifiers_result.append(max(scores))
-
-
-	###K nearest neighbours
-	k_range = np.arange(1, 30)
-	scores = []
-	for k in k_range:
-	    knn = KNeighborsClassifier(n_neighbors=k, p=2)
-	    knn.fit(X_train, y_train)
-	    y_pred = knn.predict(X_test)
-	    scores.append(accuracy_score(y_test, y_pred))
-	    # print("K value:", k)
-	    # print(accuracy_score(y_test, y_pred))
-	print(k_range[scores.index(max(scores))], max(scores))
-	classifiers_result.append(max(scores))
-
-
-	###SVC
-	scores = []
-	C_range = [10**i for i in range(10)]
-	for i in range(len(C_range)):
-		svc = SVC(C=C_range[i],kernel='rbf', random_state=3)
-		svc.fit(X_train, y_train)
-		y_pred = svc.predict(X_test)
-		scores.append(accuracy_score(y_test, y_pred))
-		# print("C value:", 10**i)
-		# print(accuracy_score(y_test, y_pred))
-	print(C_range[scores.index(max(scores))], max(scores))
-	classifiers_result.append(max(scores))
-
-
-	#Decision Trees
-	scores = []
-	dep = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 25]
-	for i in range(len(dep)):
-		clf = DecisionTreeClassifier(max_depth=dep[i],max_features='log2', random_state=3)
-		clf.fit(X_train, y_train)
-		y_pred = clf.predict(X_test)
-		scores.append(accuracy_score(y_test, y_pred))
-		# print("dep value:", dep[i])
-		# print(accuracy_score(y_test, y_pred))
-	print(dep[scores.index(max(scores))], max(scores))
-	classifiers_result.append(max(scores))
-
-
-	dep = [5*i for i in range(1,20)]
-	depth = [5,10,15,20,25,30]
-	max_scores=[]
-	for d in depth:
-		scores = []
-		for i in range(len(dep)):
-			clf = RandomForestClassifier(max_depth=d, n_estimators=dep[i],max_features='log2',random_state=0)
-			clf.fit(X_train, y_train)
-			y_pred = clf.predict(X_test)
-			scores.append(accuracy_score(y_test, y_pred))
-			# print("dep value:", dep[i])
-			# print(accuracy_score(y_test, y_pred))
-		# print(dep[scores.index(max(scores))], max(scores))
-		max_scores.append(max(scores))
-	print(max(max_scores))
-	classifiers_result.append(max(max_scores))
-
-
-	scores = []
-	# dep = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12,20, 30, 40, 50, 60, 100]
-	dep = [10*i for i in range(1,20)]
-	for i in range(len(dep)):
-		clf = AdaBoostClassifier(n_estimators=dep[i], random_state= 3, base_estimator=RandomForestClassifier())
-		clf.fit(X_train, y_train)
-		y_pred = clf.predict(X_test)
-		scores.append(accuracy_score(y_test, y_pred))
-		# print(accuracy_score(y_test, y_pred))
-	print(dep[scores.index(max(scores))], max(scores))
-	classifiers_result.append(max(scores))
-
-	plt.bar(np.arange(len(classifiers_result)), classifiers_result, align='center', alpha=0.5)
-	plt.xticks(np.arange(len(classifiers_result)), classifiers)
-	plt.ylabel('Accuracy')
-	plt.title('Season ' + str(season_no) + ' - Classifiers')
-	plt.savefig('season_graphs/Season_' + str(season_no) + '_Classifiers.png')
-	# plt.show()
-	return classifiers_result
+X_train = np.array(X_train)
+X_test = np.array(X_test)
+y_train = np.array(y_train)
+y_test = np.array(y_test)
 
 classifiers = ['MLP','KNN', 'SVC', 'Decision Trees', 'Adaboost_RF']
+classifiers_result = []
+# X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.33, random_state=3)
 
-myfile = open('allseasons.csv', 'w')
-wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-wr.writerow(classifiers)
+scores=[]
+h_range = [1, 2, 3, 4, 5, 6, 7, 8]
+for h in h_range:
+	mlp = MLPClassifier(hidden_layer_sizes=(139*h, 2), max_iter=10000, random_state=3)
+	mlp.fit(X_train, y_train)
+	y_pred = mlp.predict(X_test)
+	scores.append(accuracy_score(y_test, y_pred))
 
-seasons = [1,3,4,5,6,7,8,9]
-for se in seasons:
-	result_list = test_on_season(se)
-	result_list.append(se)
-	wr.writerow(result_list)
+print(h_range[scores.index(max(scores))], max(scores))
+classifiers_result.append(max(scores))
 
+# score = cross_val_score(mlp, data, target, cv=5)
+# print(score)
+# print(score.mean())
 
-# plt.xticks(np.arange(len(2)), seasons)
+###K nearest neighbours
+k_range = np.arange(1, 30)
+scores = []
+for k in k_range:
+    knn = KNeighborsClassifier(n_neighbors=k, p=2)
+    knn.fit(X_train, y_train)
+    y_pred = knn.predict(X_test)
+    scores.append(accuracy_score(y_test, y_pred))
+    # print("K value:", k)
+    # print(accuracy_score(y_test, y_pred))
+print(k_range[scores.index(max(scores))], max(scores))
+classifiers_result.append(max(scores))
+
+# fig = plt.figure()
+# plt.plot(range(1,len(scores)+1),scores)
+# plt.xlabel('K')
 # plt.ylabel('Accuracy')
-# plt.title('Season ' + str(season_no) + ' - Classifiers')
+# plt.title('K Nearest neighbours - K vs Accuracy')
 # plt.show()
+# savefig('foo.pdf')
+
+###SVC
+scores = []
+C_range = [10**i for i in range(10)]
+for i in range(len(C_range)):
+	svc = SVC(C=C_range[i], random_state=3)
+	svc.fit(X_train, y_train)
+	y_pred = svc.predict(X_test)
+	scores.append(accuracy_score(y_test, y_pred))
+	# print("C value:", 10**i)
+	# print(accuracy_score(y_test, y_pred))
+print(C_range[scores.index(max(scores))], max(scores))
+classifiers_result.append(max(scores))
+
+# fig = plt.figure()
+# # plt.plot(C_range[0:4],scores[0:4])
+# plt.semilogx(C_range, scores)
+# plt.xlabel('Penalty Parameter C')
+# plt.ylabel('Accuracy')
+# plt.title('Support Vector Classifier - C vs Accuracy')
+# plt.show()
+
+
+
+#Decision Trees
+scores = []
+dep = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 25]
+for i in range(len(dep)):
+	clf = DecisionTreeClassifier(max_depth=dep[i],max_features='log2', random_state=3)
+	clf.fit(X_train, y_train)
+	y_pred = clf.predict(X_test)
+	scores.append(accuracy_score(y_test, y_pred))
+	# print("dep value:", dep[i])
+	# print(accuracy_score(y_test, y_pred))
+print(dep[scores.index(max(scores))], max(scores))
+classifiers_result.append(max(scores))
+
+# fig = plt.figure()
+# plt.plot(dep,scores)
+# plt.xlabel('Max depth')
+# plt.ylabel('Accuracy')
+# plt.title('Decision Tree - Max Depth vs Accuracy')
+# plt.show()
+
+##Random Forest
+#Number of trees
+# scores = []
+# dep = [5*i for i in range(1,20)]
+# for i in range(len(dep)):
+# 	clf = RandomForestClassifier(max_depth=10, n_estimators=dep[i], max_features=3,random_state=0)
+# 	clf.fit(X_train, y_train)
+# 	y_pred = clf.predict(X_test)
+# 	scores.append(accuracy_score(y_test, y_pred))
+# 	print("dep value:", dep[i])
+# 	print(accuracy_score(y_test, y_pred))
+# print(dep[scores.index(max(scores))], max(scores))
+
+# fig = plt.figure()
+# plt.plot(dep,scores)
+# plt.xlabel('Number of trees')
+# plt.ylabel('Accuracy')
+# plt.title('Random Forest - Trees vs Accuracy')
+# plt.show()
+
+#Max depth
+# scores = []
+# dep = [i for i in range(3,20)]
+# for i in range(len(dep)):
+# 	clf = RandomForestClassifier(max_depth=dep[i], n_estimators=84, max_features=3,random_state=0)
+# 	clf.fit(X_train, y_train)
+# 	y_pred = clf.predict(X_test)
+# 	scores.append(accuracy_score(y_test, y_pred))
+# 	print("dep value:", dep[i])
+# 	print(accuracy_score(y_test, y_pred))
+# print(dep[scores.index(max(scores))], max(scores))
+
+
+
+
+scores = []
+# dep = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12,20, 30, 40, 50, 60, 100]
+dep = [10*i for i in range(1,15)]
+for i in range(len(dep)):
+	clf = AdaBoostClassifier(n_estimators=dep[i], random_state= 3, base_estimator=RandomForestClassifier())
+	clf.fit(X_train, y_train)
+	y_pred = clf.predict(X_test)
+	scores.append(accuracy_score(y_test, y_pred))
+	# print(accuracy_score(y_test, y_pred))
+print(dep[scores.index(max(scores))], max(scores))
+classifiers_result.append(max(scores))
+
+# fig = plt.figure()
+# plt.plot(dep,scores)
+# plt.xlabel('Estimators')
+# plt.ylabel('Accuracy')
+# plt.title('Adaboost - estimators vs Accuracy')
+# plt.show()
+
+plt.bar(np.arange(len(classifiers_result)), classifiers_result, align='center', alpha=0.5)
+plt.xticks(np.arange(len(classifiers_result)), classifiers)
+plt.ylabel('Accuracy')
+plt.title('Classifiers')
+plt.show()
